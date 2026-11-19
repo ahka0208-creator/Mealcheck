@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍱 銀礦灣營 · 每日同工餐數查核</title>
+    <style>
+        :root {
+            --bg-dark: #0F172A;
+            --bg-card: #1E293B;
+            --primary: #38BDF8;
+            --breakfast: #F59E0B;
+            --lunch: #10B981;
+            --dinner: #8B5CF6;
+            --danger: #F87171;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: rgba(255, 255, 255, 0.08);
+            --nav-height: 64px;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 14px 14px calc(var(--nav-height) + 22px) 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .tab-view {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            animation: fadeIn 0.18s ease-out;
+        }
+        .tab-view.active { display: flex; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 頂部日期導航 */
+        .day-nav-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+        .nav-arrow {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .nav-arrow:active { transform: scale(0.92); }
+
+        .day-nav-center {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            padding: 2px 6px;
+        }
+        .day-nav-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: #FBBF24;
+            pointer-events: none;
+        }
+        .day-nav-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            font-weight: 700;
+            pointer-events: none;
+        }
+        .hidden-date-picker {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        /* 三餐大字統計卡 */
+        .meals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .meal-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 12px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        .meal-card:active { transform: scale(0.96); }
+        .meal-card.b-card.active {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: var(--breakfast);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.25);
+        }
+        .meal-card.l-card.active {
+            background: rgba(16, 185, 129, 0.16);
+            border-color: var(--lunch);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+        }
+        .meal-card.d-card.active {
+            background: rgba(139, 92, 246, 0.18);
+            border-color: var(--dinner);
+            box-shadow: 0 0 14px rgba(139, 92, 246, 0.28);
+        }
+        .meal-icon { font-size: 19px; line-height: 1; }
+        .meal-name { font-size: 12px; font-weight: 800; color: var(--text-main); }
+        .meal-window {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 2px;
+        }
+        .meal-count {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1.05;
+            font-variant-numeric: tabular-nums;
+        }
+        .b-card .meal-count { color: #FBBF24; }
+        .l-card .meal-count { color: #34D399; }
+        .d-card .meal-count { color: #A78BFA; }
+        .meal-unit { font-size: 11px; color: var(--text-muted); font-weight: bold; }
+
+        /* 營友動態與操作列 */
+        .meta-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 11px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .camp-pill {
+            font-size: 12px;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+        .camp-pill span { color: var(--primary); }
+        .action-row {
+            display: flex;
+            gap: 6px;
+        }
+        .mini-btn {
+            background: rgba(56, 189, 248, 0.14);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: var(--primary);
+            padding: 6px 10px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .mini-btn:active { transform: scale(0.95); }
+        .mini-btn.subtle {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border);
+            color: var(--text-muted);
+        }
+
+        /* 規則設定抽屜 */
+        .rules-card {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 16px;
+            padding: 14px;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .rules-card.open { display: flex; }
+        .rule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-main);
+            gap: 10px;
+        }
+        .rule-item small {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .switch-input {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* 名單篩選列與同工卡片 */
+        .list-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .filter-pills {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+        }
+        .filter-pills::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 7px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .filter-btn.active {
+            background: var(--primary);
+            color: #0F172A;
+            border-color: var(--primary);
+        }
+
+        .staff-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .staff-row {
+            background: rgba(0, 0, 0, 0.26);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 11px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .staff-row.is-me {
+            border-color: rgba(56, 189, 248, 0.45);
+            background: rgba(56, 189, 248, 0.08);
+        }
+        .staff-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+        .staff-top {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .staff-name {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+        .dept-tag {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 5px;
+        }
+        .dept-camp { background: rgba(56, 189, 248, 0.18); color: #38BDF8; }
+        .dept-admin { background: rgba(148, 163, 184, 0.2); color: #CBD5E1; }
+        .dept-hk { background: rgba(45, 212, 191, 0.18); color: #2DD4BF; }
+        .dept-kitchen { background: rgba(245, 158, 11, 0.18); color: #FBBF24; }
+        .dept-extra { background: rgba(236, 72, 153, 0.2); color: #F472B6; }
+        .no-b-tag {
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: rgba(248, 113, 113, 0.14);
+            color: #FCA5A5;
+        }
+
+        .staff-time {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 早午晚互動切換粒 */
+        .meal-toggles {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .m-pill {
+            width: 34px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.22);
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+        .m-pill:active { transform: scale(0.9); }
+        .m-pill.on-b {
+            background: rgba(245, 158, 11, 0.22);
+            border-color: var(--breakfast);
+            color: #FBBF24;
+        }
+        .m-pill.on-l {
+            background: rgba(16, 185, 129, 0.22);
+            border-color: var(--lunch);
+            color: #34D399;
+        }
+        .m-pill.on-d {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: var(--dinner);
+            color: #C4B5FD;
+        }
+
+        /* 臨時加人區 */
+        .add-extra-row {
+            display: flex;
+            gap: 6px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border);
+        }
+        .extra-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            outline: none;
+        }
+        .extra-add-btn {
+            background: var(--lunch);
+            color: #0F172A;
+            border: none;
+            padding: 0 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .excluded-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.55;
+            padding: 4px 8px;
+        }
+
+        /* 全月總覽表 */
+        .month-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .m-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 6px;
+            text-align: center;
+        }
+        .m-stat span { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+        .m-stat strong { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+        .month-table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .month-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .month-table th {
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-muted);
+            padding: 10px 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .month-table td {
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-variant-numeric: tabular-nums;
+        }
+        .month-table tr { cursor: pointer; transition: background 0.12s; }
+        .month-table tbody tr:active { background: rgba(56, 189, 248, 0.12); }
+        .month-table tr.is-today { background: rgba(251, 191, 36, 0.1); }
+        .td-date { text-align: left !important; padding-left: 12px !important; font-weight: 800; white-space: nowrap; }
+        .td-camp { text-align: left !important; font-size: 11px; color: var(--text-muted); max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .num-b { color: #FBBF24; font-weight: 900; }
+        .num-l { color: #34D399; font-weight: 900; }
+        .num-d { color: #A78BFA; font-weight: 900; }
+        .num-zero { color: rgba(255, 255, 255, 0.18); font-weight: normal; }
+
+        /* 底部導航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            background: rgba(30, 41, 59, 0.97);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 20px; }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10B981;
+            color: #0F172A;
+            padding: 9px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 900;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+            z-index: 200;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ================= 分頁 1：每日餐數 ================= -->
+    <div id="viewDaily" class="tab-view active">
+        <!-- 日期導航 -->
+        <div class="day-nav-bar">
+            <button class="nav-arrow" onclick="stepDay(-1)">◀</button>
+            <div class="day-nav-center">
+                <input type="date" id="datePicker" class="hidden-date-picker" min="2026-11-01" max="2026-11-30" onchange="onPickDate(event)">
+                <div class="day-nav-title" id="navDateTitle">11月19日 (星期四)</div>
+                <div class="day-nav-sub" id="navDateSub">📅 點擊直接選擇日期</div>
+            </div>
+            <button class="nav-arrow" onclick="stepDay(1)">▶</button>
+        </div>
+
+        <!-- 早午晚 3 格大數（連確切用餐時段） -->
+        <div class="meals-grid">
+            <div class="meal-card b-card" id="cardB" onclick="toggleMealFilter('B')">
+                <span class="meal-icon">🌅</span>
+                <span class="meal-name">早餐</span>
+                <span class="meal-window">08:15-09:00</span>
+                <span class="meal-count" id="countB">0</span>
+                <span class="meal-unit">人食</span>
+            </div>
+            <div class="meal-card l-card" id="cardL" onclick="toggleMealFilter('L')">
+                <span class="meal-icon">☀️</span>
+                <span class="meal-name">午餐</span>
+                <span class="meal-window">12:15-13:00</span>
+                <span class="meal-count" id="countL">0</span>
+                <span class="meal-unit">人食</span>
+            </div>
+            <div class="meal-card d-card" id="cardD" onclick="toggleMealFilter('D')">
+                <span class="meal-icon">🌙</span>
+                <span class="meal-name">晚餐</span>
+                <span class="meal-window">18:00-18:45</span>
+                <span class="meal-count" id="countD">0</span>
+                <span class="meal-unit">人食</span>
+            </div>
+        </div>
+
+        <!-- 營友動態與快捷掣 -->
+        <div class="meta-bar">
+            <div class="camp-pill">⛺ 營期：<span id="campInfoText">--</span></div>
+            <div class="action-row">
+                <button class="mini-btn" onclick="copyMealReport()">📋 複製報數</button>
+                <button class="mini-btn subtle" onclick="toggleRules()">⚙️ 規則</button>
+            </div>
+        </div>
+
+        <!-- 計算規則開關 -->
+        <div class="rules-card" id="rulesCard">
+            <div style="font-size:13px; font-weight:900; color:var(--primary);">⚙️ 用餐時段重疊判定微調</div>
+            <label class="rule-item">
+                <div>
+                    <strong>08:30 上班計早餐 (葉靖文、邱凱敏)</strong>
+                    <small>08:30–09:00 與早餐時段重疊 30 分鐘；關閉則只計 08:15 前上班者</small>
+                </div>
+                <input type="checkbox" id="rule0830Breakfast" class="switch-input" checked onchange="onRuleChange()">
+            </label>
+            <label class="rule-item">
+                <div>
+                    <strong>13:00 上班計午餐 (廚房中更)</strong>
+                    <small>午餐 13:00 結束，預設關閉；如中更提早食飯可開啟</small>
+                </div>
+                <input type="checkbox" id="rule1300Lunch" class="switch-input" onchange="onRuleChange()">
+            </label>
+            <label class="rule-item">
+                <div>
+                    <strong>18:00 放工計晚餐</strong>
+                    <small>晚餐 18:00 開始，18:00 收工預設不計；如留低食飯可開啟</small>
+                </div>
+                <input type="checkbox" id="rule1800EndDinner" class="switch-input" onchange="onRuleChange()">
+            </label>
+            <div style="display:flex; justify-content:flex-end; padding-top:4px;">
+                <button class="mini-btn subtle" onclick="resetDayOverrides()">↺ 重設當日手動修改</button>
+            </div>
+        </div>
+
+        <!-- 當日返工及食飯名單 -->
+        <div class="list-card">
+            <div class="filter-pills">
+                <button class="filter-btn active" id="fBtnALL" onclick="setMealFilter('ALL')">👥 全部同工</button>
+                <button class="filter-btn" id="fBtnB" onclick="setMealFilter('B')">🌅 早餐名單</button>
+                <button class="filter-btn" id="fBtnL" onclick="setMealFilter('L')">☀️ 午餐名單</button>
+                <button class="filter-btn" id="fBtnD" onclick="setMealFilter('D')">🌙 晚餐名單</button>
+            </div>
+
+            <div style="font-size:11px; color:var(--text-muted); padding:0 2px;">
+                💡 可直接撳右邊 <strong>[早] [午] [晚]</strong> 臨時改搭食或唔食（自動儲存）
+            </div>
+
+            <div class="staff-list" id="staffList"></div>
+
+            <!-- 臨時加人搭食 -->
+            <div class="add-extra-row">
+                <input type="text" id="extraNameInput" class="extra-input" placeholder="臨時加人搭食 (輸入名字...)" onkeypress="if(event.key==='Enter') addExtraPerson()">
+                <button class="extra-add-btn" onclick="addExtraPerson()">➕ 加人</button>
+            </div>
+        </div>
+
+        <div class="excluded-note">
+            🕒 判定時段：早 08:15-09:00 ｜ 午 12:15-13:00 ｜ 晚 18:00-18:45<br>
+            🌅 <strong>早餐已自動剔除</strong>：黎群娣、王少麗、吳麗貞、陳惠珍、PT(儀)、PT(英姐)（午餐照常計算）<br>
+            🚫 已自動排除放假 (AL/CL/SL) 及外出/東涌/開會 (C/TC/M) 時段
+        </div>
+    </div>
+
+    <!-- ================= 分頁 2：全月總覽 ================= -->
+    <div id="viewMonthly" class="tab-view">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:0 4px;">
+            <div>
+                <h2 style="margin:0; font-size:19px; color:#FBBF24;">📊 2026年11月 餐數總覽</h2>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">點擊任何一日即跳入查看詳細名單</div>
+            </div>
+            <button class="mini-btn" onclick="jumpToToday()">📍 返今日</button>
+        </div>
+
+        <div class="month-summary-grid">
+            <div class="m-stat">
+                <span>🌅 全月早餐總計</span>
+                <strong id="totalMonthB" style="color:#FBBF24;">0</strong>
+            </div>
+            <div class="m-stat">
+                <span>☀️ 全月午餐總計</span>
+                <strong id="totalMonthL" style="color:#34D399;">0</strong>
+            </div>
+            <div class="m-stat">
+                <span>🌙 全月晚餐總計</span>
+                <strong id="totalMonthD" style="color:#A78BFA;">0</strong>
+            </div>
+        </div>
+
+        <div class="month-table-card">
+            <table class="month-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding-left:12px;">日期</th>
+                        <th style="text-align:left;">營期動態</th>
+                        <th>🌅 早</th>
+                        <th>☀️ 午</th>
+                        <th>🌙 晚</th>
+                    </tr>
+                </thead>
+                <tbody id="monthTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 底部導航列 -->
+<div class="bottom-nav">
+    <div class="nav-item active" id="navDaily" onclick="switchTab('Daily')">
+        <span class="nav-icon">🍱</span>
+        <span>每日餐數</span>
+    </div>
+    <div class="nav-item" id="navMonthly" onclick="switchTab('Monthly')">
+        <span class="nav-icon">📊</span>
+        <span>全月總覽</span>
+    </div>
+</div>
+
+<div class="toast" id="toast">已複製報數內容！</div>
+
+<script>
+    // ================= 2026年11月 完整整合更表資料 =================
+    const ROSTER_DATA = {
+        1: { dow: "日", camp: "130出16出12出40日", staff: [
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "16:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        2: { dow: "一", camp: "營期空檔", staff: [
+            { name: "張麗貞", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        3: { dow: "二", camp: "營期空檔", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        4: { dow: "三", camp: "60日100日84入96入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["09:00", "00:00"]], overnight: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "禤卓岐", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "22:00"]] }
+        ]},
+        5: { dow: "四", camp: "84留96留", staff: [
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(YOYO)", dept: "廚房", intervals: [["07:00", "15:00"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "楊世明", dept: "活動部", intervals: [["18:00", "00:00"]], overnight: true, note: "日間外出C" }
+        ]},
+        6: { dow: "五", camp: "84出96出180入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "PT(JASMINE)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "楊世明", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        7: { dow: "六", camp: "180出40日66入48入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(徐玉卿)", dept: "廚房", intervals: [["07:00", "15:00"]] },
+            { name: "PT(JASMINE)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true }
+        ]},
+        8: { dow: "日", camp: "66出48出180入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(YOYO)", dept: "廚房", intervals: [["13:00", "22:00"]] },
+            { name: "PT(JASMINE)", dept: "廚房", intervals: [["13:00", "22:00"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "16:00"]] },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "楊世明", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["14:00", "22:00"]] }
+        ]},
+        9: { dow: "一", camp: "180包", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(YOYO)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        10: { dow: "二", camp: "180包", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        11: { dow: "三", camp: "180出50日20日116入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "楊世明", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        12: { dow: "四", camp: "116留", staff: [
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "PT(徐玉卿)", dept: "廚房", intervals: [["07:00", "15:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "陳浩賓", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        13: { dow: "五", camp: "116出32入8入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["07:00", "15:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        14: { dow: "六", camp: "32出8留40日60入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "20:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["18:00", "00:00"]], overnight: true }
+        ]},
+        15: { dow: "日", camp: "60出8出40日", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        16: { dow: "一", camp: "營期空檔", staff: [
+            { name: "李惠卿", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        17: { dow: "二", camp: "營期空檔", staff: [
+            { name: "張麗貞", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        18: { dow: "三", camp: "134入", staff: [
+            { name: "李惠卿", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        19: { dow: "四", camp: "134留", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "PT(YOYO)", dept: "廚房", intervals: [["07:00", "15:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳浩賓", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "禤卓岐", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true }
+        ]},
+        20: { dow: "五", camp: "134出144入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["08:00", "22:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "楊世明", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        21: { dow: "六", camp: "144出40日20日30入12入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "李惠卿", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "22:00"]] },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "禤卓岐", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        22: { dow: "日", camp: "30出12出40日", staff: [
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "楊世明", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "16:00"]] }
+        ]},
+        23: { dow: "一", camp: "營期空檔", staff: [
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        24: { dow: "二", camp: "營期空檔", staff: [
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]},
+        25: { dow: "三", camp: "64入 (35入21入)", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "楊世明", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["10:00", "22:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "22:00"]] }
+        ]},
+        26: { dow: "四", camp: "64留 (35留21留)", staff: [
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "黃卓勳", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "00:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "16:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "00:00"]] },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "楊世明", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "16:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        27: { dow: "五", camp: "64出40入", staff: [
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "黃卓勳", dept: "廚房", intervals: [["13:00", "21:48"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "徐妤霖", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        28: { dow: "六", camp: "40出30日50入42入80入7入", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
+            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "18:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
+            { name: "梁穎琳", dept: "活動部", intervals: [["14:00", "00:00"]], overnight: true }
+        ]},
+        29: { dow: "日", camp: "50出42出80出7出", staff: [
+            { name: "黃卓勳", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "張麗貞", dept: "廚房", intervals: [["07:00", "15:48"]] },
+            { name: "PT(JASMINE)", dept: "廚房", intervals: [["07:00", "15:00"]] },
+            { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "17:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["08:00", "14:00"]] },
+            { name: "陳鎵榮", dept: "活動部", intervals: [["08:00", "14:00"]] }
+        ]},
+        30: { dow: "一", camp: "營期空檔", staff: [
+            { name: "吳玉英", dept: "廚房", intervals: [["09:12", "18:00"]] },
+            { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
+            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
+            { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
+            { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
+            { name: "梁穎琳", dept: "活動部", intervals: [["10:00", "18:00"]] }
+        ]}
+    };
+
+    // ================= 確切用餐時段（分鐘） =================
+    const MEAL_WINDOWS = {
+        B: [8 * 60 + 15, 9 * 60 + 0],   // 08:15 - 09:00
+        L: [12 * 60 + 15, 13 * 60 + 0], // 12:15 - 13:00
+        D: [18 * 60 + 0, 18 * 60 + 45]  // 18:00 - 18:45
+    };
+
+    // ================= 狀態與本機儲存 (v3) =================
+    const STORAGE_OVERRIDES = 'smb_meal_overrides_202611_v3';
+    const STORAGE_EXTRAS = 'smb_meal_extras_202611_v3';
+    const STORAGE_RULES = 'smb_meal_rules_202611_v3';
+
+    let overrides = JSON.parse(localStorage.getItem(STORAGE_OVERRIDES)) || {};
+    let extras = JSON.parse(localStorage.getItem(STORAGE_EXTRAS)) || {};
+    let rules = JSON.parse(localStorage.getItem(STORAGE_RULES)) || {
+        breakfast0830: true,   // 08:30-17:18 與 08:15-09:00 重疊 30 分鐘，預設為計
+        lunch1300: false,      // 13:00 上班在 12:15-13:00 之後，預設不計
+        dinner1800End: false   // 18:00 放工在 18:00-18:45 之前，預設不計
+    };
+
+    let currentDay = 19;
+    let mealFilter = 'ALL'; // 'ALL', 'B', 'L', 'D'
+
+    window.onload = () => {
+        const now = new Date();
+        if (now.getFullYear() === 2026 && now.getMonth() === 10) {
+            currentDay = now.getDate();
+        }
+        document.getElementById('rule0830Breakfast').checked = rules.breakfast0830;
+        document.getElementById('rule1300Lunch').checked = rules.lunch1300;
+        document.getElementById('rule1800EndDinner').checked = rules.dinner1800End;
+
+        renderDaily();
+    };
+
+    function toMin(hhmm, isEnd = false) {
+        const [h, m] = hhmm.split(':').map(Number);
+        if (isEnd && h === 0 && m === 0) return 24 * 60;
+        return h * 60 + m;
+    }
+
+    // 依確切用餐時段 (08:15-09:00 / 12:15-13:00 / 18:00-18:45) 判定早/午/晚餐
+    function calcDefaultMeals(person) {
+        const intervals = person.intervals;
+        const [bStart, bEnd] = MEAL_WINDOWS.B; // 495, 540
+        const [lStart, lEnd] = MEAL_WINDOWS.L; // 735, 780
+        const [dStart, dEnd] = MEAL_WINDOWS.D; // 1080, 1125
+
+        // 早餐：房務 6 人一律不計；其餘檢查上班時段是否與 08:15-09:00 重疊
+        let b = false;
+        if (!person.noBreakfast) {
+            b = intervals.some(([s, e]) => {
+                const sm = toMin(s), em = toMin(e, true);
+                if (rules.breakfast0830) {
+                    return sm < bEnd && em > bStart;      // 有重疊即計（含 08:30 上班）
+                }
+                return sm <= bStart && em > bStart;       // 必須 08:15 或之前上班
+            });
+        }
+
+        // 午餐：檢查上班時段是否與 12:15-13:00 重疊（13:00 上班預設不計）
+        const l = intervals.some(([s, e]) => {
+            const sm = toMin(s), em = toMin(e, true);
+            if (rules.lunch1300) {
+                return sm <= lEnd && em > lStart;         // 包含 13:00 上班
+            }
+            return sm < lEnd && em > lStart;              // 嚴格重疊 12:15-13:00
+        });
+
+        // 晚餐：檢查上班時段是否與 18:00-18:45 重疊（18:00 放工預設不計，18:00 上班計）
+        const d = intervals.some(([s, e]) => {
+            const sm = toMin(s), em = toMin(e, true);
+            if (rules.dinner1800End) {
+                return sm < dEnd && em >= dStart;         // 包含 18:00 放工
+            }
+            return sm < dEnd && em > dStart;              // 嚴格重疊 18:00-18:45
+        });
+
+        return { B: b, L: l, D: d };
+    }
+
+    function getDayMealEntries(day) {
+        const dayObj = ROSTER_DATA[day];
+        const dayOverrides = overrides[day] || {};
+        const dayExtras = extras[day] || [];
+
+        const list = dayObj.staff.map(p => {
+            const def = calcDefaultMeals(p);
+            const ov = dayOverrides[p.name] || {};
+            const timeText = p.intervals.map(([s, e]) => `${s}-${e}`).join(' + ') +
+                (p.overnight ? ' 🌙值夜' : '') +
+                (p.note ? ` (${p.note})` : '');
+            return {
+                name: p.name,
+                dept: p.dept,
+                noBreakfast: !!p.noBreakfast,
+                timeText,
+                isExtra: false,
+                B: ov.B !== undefined ? ov.B : def.B,
+                L: ov.L !== undefined ? ov.L : def.L,
+                D: ov.D !== undefined ? ov.D : def.D
+            };
+        });
+
+        dayExtras.forEach((ex, idx) => {
+            list.push({
+                name: ex.name,
+                dept: '臨時搭食',
+                noBreakfast: false,
+                timeText: '手動新增',
+                isExtra: true,
+                extraIdx: idx,
+                B: !!ex.B,
+                L: !!ex.L,
+                D: !!ex.D
+            });
+        });
+
+        return list;
+    }
+
+    // ================= 導航與切換 =================
+    function switchTab(tab) {
+        document.getElementById('viewDaily').classList.toggle('active', tab === 'Daily');
+        document.getElementById('viewMonthly').classList.toggle('active', tab === 'Monthly');
+        document.getElementById('navDaily').classList.toggle('active', tab === 'Daily');
+        document.getElementById('navMonthly').classList.toggle('active', tab === 'Monthly');
+        if (tab === 'Monthly') renderMonthly();
+        else renderDaily();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function stepDay(delta) {
+        currentDay += delta;
+        if (currentDay < 1) currentDay = 30;
+        if (currentDay > 30) currentDay = 1;
+        renderDaily();
+    }
+
+    function onPickDate(e) {
+        const val = e.target.value;
+        if (!val) return;
+        const parts = val.split('-').map(Number);
+        if (parts[2] >= 1 && parts[2] <= 30) {
+            currentDay = parts[2];
+            renderDaily();
+        }
+    }
+
+    function jumpToDay(day) {
+        currentDay = day;
+        switchTab('Daily');
+    }
+
+    function jumpToToday() {
+        const now = new Date();
+        currentDay = (now.getFullYear() === 2026 && now.getMonth() === 10) ? now.getDate() : 19;
+        switchTab('Daily');
+    }
+
+    function toggleRules() {
+        document.getElementById('rulesCard').classList.toggle('open');
+    }
+
+    function onRuleChange() {
+        rules.breakfast0830 = document.getElementById('rule0830Breakfast').checked;
+        rules.lunch1300 = document.getElementById('rule1300Lunch').checked;
+        rules.dinner1800End = document.getElementById('rule1800EndDinner').checked;
+        localStorage.setItem(STORAGE_RULES, JSON.stringify(rules));
+        renderDaily();
+    }
+
+    function toggleMealFilter(meal) {
+        mealFilter = (mealFilter === meal) ? 'ALL' : meal;
+        renderDaily();
+    }
+
+    function setMealFilter(meal) {
+        mealFilter = meal;
+        renderDaily();
+    }
+
+    // ================= 渲染每日畫面 =================
+    function renderDaily() {
+        const dayObj = ROSTER_DATA[currentDay];
+        const entries = getDayMealEntries(currentDay);
+
+        document.getElementById('navDateTitle').innerText = `11月${currentDay}日 (星期${dayObj.dow})`;
+        document.getElementById('datePicker').value = `2026-11-${String(currentDay).padStart(2, '0')}`;
+
+        const now = new Date();
+        const isToday = (now.getFullYear() === 2026 && now.getMonth() === 10 && now.getDate() === currentDay);
+        document.getElementById('navDateSub').innerText = isToday ? '📍 今日 · 點擊可切換其他日子' : '📅 點擊可直接選擇日期';
+        document.getElementById('campInfoText').innerText = dayObj.camp;
+
+        const countB = entries.filter(e => e.B).length;
+        const countL = entries.filter(e => e.L).length;
+        const countD = entries.filter(e => e.D).length;
+
+        document.getElementById('countB').innerText = countB;
+        document.getElementById('countL').innerText = countL;
+        document.getElementById('countD').innerText = countD;
+
+        document.getElementById('cardB').classList.toggle('active', mealFilter === 'B');
+        document.getElementById('cardL').classList.toggle('active', mealFilter === 'L');
+        document.getElementById('cardD').classList.toggle('active', mealFilter === 'D');
+
+        ['ALL', 'B', 'L', 'D'].forEach(k => {
+            document.getElementById('fBtn' + k).classList.toggle('active', mealFilter === k);
+        });
+
+        const filtered = entries.filter(e => {
+            if (mealFilter === 'B') return e.B;
+            if (mealFilter === 'L') return e.L;
+            if (mealFilter === 'D') return e.D;
+            return true;
+        });
+
+        const listEl = document.getElementById('staffList');
+        listEl.innerHTML = '';
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = `<div style="text-align:center; padding:24px 0; color:var(--text-muted); font-size:13px;">此餐暫無同工需要用餐</div>`;
+            return;
+        }
+
+        filtered.forEach(item => {
+            const row = document.createElement('div');
+            row.className = `staff-row ${item.name === '陳鎵榮' ? 'is-me' : ''}`;
+
+            const deptClass =
+                item.dept === '活動部' ? 'dept-camp' :
+                item.dept === '廚房' ? 'dept-kitchen' :
+                item.dept === '房務' ? 'dept-hk' :
+                item.dept === '臨時搭食' ? 'dept-extra' : 'dept-admin';
+
+            const noBTag = item.noBreakfast ? `<span class="no-b-tag">不計早餐</span>` : '';
+
+            const removeExtraHtml = item.isExtra
+                ? `<button class="m-pill" style="color:var(--danger); border-color:rgba(248,113,113,0.35);" onclick="removeExtraPerson(${item.extraIdx})" title="移除">✕</button>`
+                : '';
+
+            row.innerHTML = `
+                <div class="staff-info">
+                    <div class="staff-top">
+                        <span class="staff-name">${item.name}</span>
+                        <span class="dept-tag ${deptClass}">${item.dept}</span>
+                        ${noBTag}
+                    </div>
+                    <div class="staff-time">${item.timeText}</div>
+                </div>
+                <div class="meal-toggles">
+                    <button class="m-pill ${item.B ? 'on-b' : ''}" onclick="togglePersonMeal('${item.name}', ${item.isExtra}, ${item.extraIdx ?? -1}, 'B')">早</button>
+                    <button class="m-pill ${item.L ? 'on-l' : ''}" onclick="togglePersonMeal('${item.name}', ${item.isExtra}, ${item.extraIdx ?? -1}, 'L')">午</button>
+                    <button class="m-pill ${item.D ? 'on-d' : ''}" onclick="togglePersonMeal('${item.name}', ${item.isExtra}, ${item.extraIdx ?? -1}, 'D')">晚</button>
+                    ${removeExtraHtml}
+                </div>
+            `;
+            listEl.appendChild(row);
+        });
+    }
+
+    function togglePersonMeal(name, isExtra, extraIdx, mealKey) {
+        if (isExtra) {
+            extras[currentDay][extraIdx][mealKey] = !extras[currentDay][extraIdx][mealKey];
+            localStorage.setItem(STORAGE_EXTRAS, JSON.stringify(extras));
+        } else {
+            const entries = getDayMealEntries(currentDay);
+            const target = entries.find(e => !e.isExtra && e.name === name);
+            if (!target) return;
+            if (!overrides[currentDay]) overrides[currentDay] = {};
+            if (!overrides[currentDay][name]) overrides[currentDay][name] = {};
+            overrides[currentDay][name][mealKey] = !target[mealKey];
+            localStorage.setItem(STORAGE_OVERRIDES, JSON.stringify(overrides));
+        }
+        renderDaily();
+    }
+
+    function addExtraPerson() {
+        const input = document.getElementById('extraNameInput');
+        const name = input.value.trim();
+        if (!name) return;
+        if (!extras[currentDay]) extras[currentDay] = [];
+        extras[currentDay].push({
+            name,
+            B: mealFilter === 'B',
+            L: mealFilter === 'L' || mealFilter === 'ALL',
+            D: mealFilter === 'D'
+        });
+        localStorage.setItem(STORAGE_EXTRAS, JSON.stringify(extras));
+        input.value = '';
+        renderDaily();
+        showToast(`已新增「${name}」`);
+    }
+
+    function removeExtraPerson(idx) {
+        extras[currentDay].splice(idx, 1);
+        localStorage.setItem(STORAGE_EXTRAS, JSON.stringify(extras));
+        renderDaily();
+    }
+
+    function resetDayOverrides() {
+        delete overrides[currentDay];
+        delete extras[currentDay];
+        localStorage.setItem(STORAGE_OVERRIDES, JSON.stringify(overrides));
+        localStorage.setItem(STORAGE_EXTRAS, JSON.stringify(extras));
+        renderDaily();
+        showToast('已重設當日為更表預設');
+    }
+
+    function copyMealReport() {
+        const dayObj = ROSTER_DATA[currentDay];
+        const entries = getDayMealEntries(currentDay);
+        const bNames = entries.filter(e => e.B).map(e => e.name);
+        const lNames = entries.filter(e => e.L).map(e => e.name);
+        const dNames = entries.filter(e => e.D).map(e => e.name);
+
+        const text =
+`📅 11月${currentDay}日 (星期${dayObj.dow}) 同工餐數
+🌅 早餐 (08:15-09:00)：${bNames.length}人${bNames.length ? ' (' + bNames.join('、') + ')' : ''}
+☀️ 午餐 (12:15-13:00)：${lNames.length}人${lNames.length ? ' (' + lNames.join('、') + ')' : ''}
+🌙 晚餐 (18:00-18:45)：${dNames.length}人${dNames.length ? ' (' + dNames.join('、') + ')' : ''}`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => showToast('📋 已複製今日報數！'));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('📋 已複製今日報數！');
+        }
+    }
+
+    // ================= 渲染全月總覽 =================
+    function renderMonthly() {
+        const tbody = document.getElementById('monthTableBody');
+        tbody.innerHTML = '';
+
+        let sumB = 0, sumL = 0, sumD = 0;
+        const now = new Date();
+        const todayNum = (now.getFullYear() === 2026 && now.getMonth() === 10) ? now.getDate() : -1;
+
+        for (let d = 1; d <= 30; d++) {
+            const dayObj = ROSTER_DATA[d];
+            const entries = getDayMealEntries(d);
+            const cB = entries.filter(e => e.B).length;
+            const cL = entries.filter(e => e.L).length;
+            const cD = entries.filter(e => e.D).length;
+            sumB += cB; sumL += cL; sumD += cD;
+
+            const tr = document.createElement('tr');
+            if (d === todayNum) tr.className = 'is-today';
+            tr.onclick = () => jumpToDay(d);
+            tr.innerHTML = `
+                <td class="td-date">11/${String(d).padStart(2,'0')} (${dayObj.dow})</td>
+                <td class="td-camp">${dayObj.camp}</td>
+                <td class="${cB ? 'num-b' : 'num-zero'}">${cB}</td>
+                <td class="${cL ? 'num-l' : 'num-zero'}">${cL}</td>
+                <td class="${cD ? 'num-d' : 'num-zero'}">${cD}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        document.getElementById('totalMonthB').innerText = `${sumB} 人次`;
+        document.getElementById('totalMonthL').innerText = `${sumL} 人次`;
+        document.getElementById('totalMonthD').innerText = `${sumD} 人次`;
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 1800);
+    }
+</script>
+
+</body>
+</html>
