@@ -523,7 +523,7 @@
             <button class="nav-arrow" onclick="stepDay(1)">▶</button>
         </div>
 
-        <!-- 早午晚 3 格大數（連確切用餐時段） -->
+        <!-- 早午晚 3 格大數 -->
         <div class="meals-grid">
             <div class="meal-card b-card" id="cardB" onclick="toggleMealFilter('B')">
                 <span class="meal-icon">🌅</span>
@@ -562,10 +562,10 @@
             <div style="font-size:13px; font-weight:900; color:var(--primary);">⚙️ 用餐時段重疊判定微調</div>
             <label class="rule-item">
                 <div>
-                    <strong>08:30 上班計早餐 (葉靖文、邱凱敏)</strong>
-                    <small>08:30–09:00 與早餐時段重疊 30 分鐘；關閉則只計 08:15 前上班者</small>
+                    <strong>黃健 (08:12 上班) 計早餐</strong>
+                    <small>08:12–17:00 涵蓋整個早餐時段；如不食早餐可關閉</small>
                 </div>
-                <input type="checkbox" id="rule0830Breakfast" class="switch-input" checked onchange="onRuleChange()">
+                <input type="checkbox" id="rule0812Breakfast" class="switch-input" checked onchange="onRuleChange()">
             </label>
             <label class="rule-item">
                 <div>
@@ -610,8 +610,8 @@
 
         <div class="excluded-note">
             🕒 判定時段：早 08:15-09:00 ｜ 午 12:15-13:00 ｜ 晚 18:00-18:45<br>
-            🌅 <strong>早餐已自動剔除</strong>：黎群娣、王少麗、吳麗貞、陳惠珍、PT(儀)、PT(英姐)（午餐照常計算）<br>
-            🚫 已自動排除放假 (AL/CL/SL) 及外出/東涌/開會 (C/TC/M) 時段
+            🚫 <strong>所有餐已剔除</strong>：邱凱敏、葉靖文（及放假 AL/CL/SL、外出 C/TC/M）<br>
+            🌅 <strong>早餐已剔除</strong>：黎群娣、王少麗、吳麗貞、陳惠珍、PT(儀)、PT(英姐)（午餐照計）
         </div>
     </div>
 
@@ -673,6 +673,8 @@
 
 <script>
     // ================= 2026年11月 完整整合更表資料 =================
+    // 已全餐剔除：邱凱敏、葉靖文
+    // 早餐剔除（午餐照計）：黎群娣、王少麗、吳麗貞、陳惠珍、PT(儀)、PT(英姐)
     const ROSTER_DATA = {
         1: { dow: "日", camp: "130出16出12出40日", staff: [
             { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
@@ -687,8 +689,6 @@
         ]},
         2: { dow: "一", camp: "營期空檔", staff: [
             { name: "張麗貞", dept: "廚房", intervals: [["09:12", "18:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -696,8 +696,6 @@
         ]},
         3: { dow: "二", camp: "營期空檔", staff: [
             { name: "黃卓勳", dept: "廚房", intervals: [["09:12", "18:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -709,8 +707,6 @@
             { name: "吳玉英", dept: "廚房", intervals: [["09:12", "18:00"]] },
             { name: "李惠卿", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
@@ -725,8 +721,6 @@
             { name: "PT(YOYO)", dept: "廚房", intervals: [["07:00", "15:00"]] },
             { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "禤卓岐", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
@@ -743,8 +737,6 @@
             { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
             { name: "PT(JASMINE)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -761,7 +753,6 @@
             { name: "PT(徐玉卿)", dept: "廚房", intervals: [["07:00", "15:00"]] },
             { name: "PT(JASMINE)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -791,7 +782,6 @@
             { name: "PT(YOYO)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "伍嘉賢", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
@@ -806,8 +796,6 @@
             { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "伍嘉賢", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
@@ -823,8 +811,6 @@
             { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -840,8 +826,6 @@
             { name: "PT(徐玉卿)", dept: "廚房", intervals: [["07:00", "15:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "楊世明", dept: "活動部", intervals: [["08:00", "00:00"]], overnight: true },
@@ -854,8 +838,6 @@
             { name: "李惠卿", dept: "廚房", intervals: [["07:00", "15:48"]] },
             { name: "PT(聰)", dept: "廚房", intervals: [["07:00", "15:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -867,7 +849,6 @@
             { name: "黃卓勳", dept: "廚房", intervals: [["09:12", "18:00"]] },
             { name: "李惠卿", dept: "廚房", intervals: [["09:12", "18:00"]] },
             { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "徐妤霖", dept: "活動部", intervals: [["08:00", "20:00"]] },
@@ -887,8 +868,6 @@
         16: { dow: "一", camp: "營期空檔", staff: [
             { name: "李惠卿", dept: "廚房", intervals: [["09:12", "18:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
@@ -897,8 +876,6 @@
         17: { dow: "二", camp: "營期空檔", staff: [
             { name: "張麗貞", dept: "廚房", intervals: [["09:12", "18:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳浩賓", dept: "活動部", intervals: [["10:00", "18:00"]] },
@@ -909,8 +886,6 @@
             { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "徐妤霖", dept: "活動部", intervals: [["10:00", "00:00"]], overnight: true },
@@ -925,8 +900,6 @@
             { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -943,8 +916,6 @@
             { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -959,7 +930,6 @@
             { name: "吳玉英", dept: "廚房", intervals: [["07:00", "15:48"]] },
             { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "PT(紅姐)", dept: "廚房", intervals: [["18:00", "21:00"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -982,14 +952,12 @@
         ]},
         23: { dow: "一", camp: "營期空檔", staff: [
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "楊世明", dept: "活動部", intervals: [["09:00", "17:00"]] },
             { name: "陳鎵榮", dept: "活動部", intervals: [["10:00", "18:00"]] }
         ]},
         24: { dow: "二", camp: "營期空檔", staff: [
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -1002,8 +970,6 @@
             { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "張麗貞", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "禤卓岐", dept: "活動部", intervals: [["10:00", "22:00"]] },
@@ -1017,8 +983,6 @@
             { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
             { name: "黃卓勳", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -1035,8 +999,6 @@
             { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
             { name: "黃卓勳", dept: "廚房", intervals: [["13:00", "21:48"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -1050,7 +1012,6 @@
             { name: "張麗貞", dept: "廚房", intervals: [["07:00", "13:00"], ["15:12", "18:00"]] },
             { name: "吳玉英", dept: "廚房", intervals: [["13:00", "21:00"]] },
             { name: "PT(聰)", dept: "廚房", intervals: [["13:00", "21:00"]] },
-            { name: "葉靖文", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "黎群娣", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "吳麗貞", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
@@ -1074,7 +1035,6 @@
         30: { dow: "一", camp: "營期空檔", staff: [
             { name: "吳玉英", dept: "廚房", intervals: [["09:12", "18:00"]] },
             { name: "黃健", dept: "事務部", intervals: [["08:12", "17:00"]] },
-            { name: "邱凱敏", dept: "事務部", intervals: [["08:30", "17:18"]] },
             { name: "王少麗", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "陳惠珍", dept: "房務", intervals: [["08:12", "17:00"]], noBreakfast: true },
             { name: "伍嘉賢", dept: "活動部", intervals: [["10:00", "18:00"]] },
@@ -1090,15 +1050,15 @@
         D: [18 * 60 + 0, 18 * 60 + 45]  // 18:00 - 18:45
     };
 
-    // ================= 狀態與本機儲存 (v3) =================
-    const STORAGE_OVERRIDES = 'smb_meal_overrides_202611_v3';
-    const STORAGE_EXTRAS = 'smb_meal_extras_202611_v3';
-    const STORAGE_RULES = 'smb_meal_rules_202611_v3';
+    // ================= 狀態與本機儲存 (v4) =================
+    const STORAGE_OVERRIDES = 'smb_meal_overrides_202611_v4';
+    const STORAGE_EXTRAS = 'smb_meal_extras_202611_v4';
+    const STORAGE_RULES = 'smb_meal_rules_202611_v4';
 
     let overrides = JSON.parse(localStorage.getItem(STORAGE_OVERRIDES)) || {};
     let extras = JSON.parse(localStorage.getItem(STORAGE_EXTRAS)) || {};
     let rules = JSON.parse(localStorage.getItem(STORAGE_RULES)) || {
-        breakfast0830: true,   // 08:30-17:18 與 08:15-09:00 重疊 30 分鐘，預設為計
+        breakfast0812: true,   // 黃健 08:12 上班涵蓋 08:15-09:00，預設為計
         lunch1300: false,      // 13:00 上班在 12:15-13:00 之後，預設不計
         dinner1800End: false   // 18:00 放工在 18:00-18:45 之前，預設不計
     };
@@ -1111,7 +1071,7 @@
         if (now.getFullYear() === 2026 && now.getMonth() === 10) {
             currentDay = now.getDate();
         }
-        document.getElementById('rule0830Breakfast').checked = rules.breakfast0830;
+        document.getElementById('rule0812Breakfast').checked = rules.breakfast0812;
         document.getElementById('rule1300Lunch').checked = rules.lunch1300;
         document.getElementById('rule1800EndDinner').checked = rules.dinner1800End;
 
@@ -1136,10 +1096,10 @@
         if (!person.noBreakfast) {
             b = intervals.some(([s, e]) => {
                 const sm = toMin(s), em = toMin(e, true);
-                if (rules.breakfast0830) {
-                    return sm < bEnd && em > bStart;      // 有重疊即計（含 08:30 上班）
+                if (!rules.breakfast0812 && person.dept === '事務部' && sm >= 492) {
+                    return false;
                 }
-                return sm <= bStart && em > bStart;       // 必須 08:15 或之前上班
+                return sm < bEnd && em > bStart;
             });
         }
 
@@ -1147,18 +1107,18 @@
         const l = intervals.some(([s, e]) => {
             const sm = toMin(s), em = toMin(e, true);
             if (rules.lunch1300) {
-                return sm <= lEnd && em > lStart;         // 包含 13:00 上班
+                return sm <= lEnd && em > lStart;
             }
-            return sm < lEnd && em > lStart;              // 嚴格重疊 12:15-13:00
+            return sm < lEnd && em > lStart;
         });
 
         // 晚餐：檢查上班時段是否與 18:00-18:45 重疊（18:00 放工預設不計，18:00 上班計）
         const d = intervals.some(([s, e]) => {
             const sm = toMin(s), em = toMin(e, true);
             if (rules.dinner1800End) {
-                return sm < dEnd && em >= dStart;         // 包含 18:00 放工
+                return sm < dEnd && em >= dStart;
             }
-            return sm < dEnd && em > dStart;              // 嚴格重疊 18:00-18:45
+            return sm < dEnd && em > dStart;
         });
 
         return { B: b, L: l, D: d };
@@ -1248,7 +1208,7 @@
     }
 
     function onRuleChange() {
-        rules.breakfast0830 = document.getElementById('rule0830Breakfast').checked;
+        rules.breakfast0812 = document.getElementById('rule0812Breakfast').checked;
         rules.lunch1300 = document.getElementById('rule1300Lunch').checked;
         rules.dinner1800End = document.getElementById('rule1800EndDinner').checked;
         localStorage.setItem(STORAGE_RULES, JSON.stringify(rules));
